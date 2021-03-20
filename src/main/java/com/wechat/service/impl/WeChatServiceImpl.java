@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.wechat.bean.ArticleItem;
 import com.wechat.service.WeChatService;
 import com.wechat.util.FeignUtil;
@@ -164,7 +165,7 @@ public class WeChatServiceImpl implements WeChatService{
 	public String getToken() {
 		String token = (String) redisUtils.get("token");
 		if(token == null){
-			Map<String, String> tokenMap = feignUtil.getToken((String)redisUtils.get(WeChatContant.appID), (String)redisUtils.get(WeChatContant.appsecret));
+			Map<String, String> tokenMap = feignUtil.getToken(WeChatContant.appID,WeChatContant.appsecret);
 			System.out.println("token:\t"+tokenMap.toString());
 			token = tokenMap.get("access_token") ;
 			if(token != null){
@@ -174,11 +175,33 @@ public class WeChatServiceImpl implements WeChatService{
 		}
 		return token;
 	}
+	
+	@Override
+	public String getJsapiTicket() {
+		String ticket = (String) redisUtils.get("jsapi_ticket");
+		if(ticket == null){
+			JSONObject obj = feignUtil.getJsapiTicket(getToken());
+			ticket = obj.get("ticket").toString() ;
+			if(ticket != null){
+				redisUtils.set("ticket", ticket, 7000L);
+			}
+				
+		}
+		return ticket;
+	}
 
 	@Override
 	public Map<String, String> getUserInfo(String openid) {
 		// TODO Auto-generated method stub
 		return feignUtil.getUserInfo(getToken(), openid);
+	}
+
+	@Override
+	public Map<String, String> getSign(String url) {
+		// 获取ticket
+		String ticket = getJsapiTicket();
+		Map<String, String> jsonObj = WeChatUtil.sign(ticket, url);
+		return jsonObj;
 	}
    
 }

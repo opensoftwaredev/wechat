@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.wechat.mapper.DeviceMapper" >
+    <resultMap id="BaseResultMap" type="com.wechat.bean.DeviceEntity" >
+    	<id column="deviceId" property="deviceId" jdbcType="VARCHAR" />
+        <result column="openId" property="openId" jdbcType="VARCHAR" />
+    </resultMap>
+    
+    <sql id="Base_Column_List" >
+        openId, deviceId
+    </sql>
+
+    <select id="getAll" resultMap="BaseResultMap"  >
+       SELECT 
+       <include refid="Base_Column_List" />
+	   FROM t_device
+    </select>
+
+    <select id="getOne" parameterType="java.lang.String" resultMap="BaseResultMap" >
+        SELECT 
+       <include refid="Base_Column_List" />
+	   FROM t_device
+	   WHERE deviceId = #{deviceId}
+    </select>
+
+    <insert id="insert" parameterType="com.wechat.bean.DeviceEntity" >
+       INSERT INTO 
+       		t_device
+       		(openId,deviceId) 
+       	VALUES
+       		(#{openId}, #{deviceId})
+    </insert>
+    
+    <delete id="delete" parameterType="java.lang.String" >
+       DELETE FROM
+       		 t_device 
+       WHERE 
+       		 deviceId =#{deviceId}
+    </delete>
+
+</mapper>

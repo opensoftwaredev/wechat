@@ -2,9 +2,9 @@ package com.wechat.util;
 
 public class WeChatContant {
 	 //APPID
-    public static final String appID = "appid";
+    public static final String appID = "wx27f5467670b82518";
     //appsecret
-    public static final String appsecret = "appsecret";
+    public static final String appsecret = "c61352feac84819a9f945ce399083573";
     // Token
     public static final String TOKEN = "zch";
     public static final String RESP_MESSAGE_TYPE_TEXT = "text";

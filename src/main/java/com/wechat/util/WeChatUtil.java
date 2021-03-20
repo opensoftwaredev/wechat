@@ -1,23 +1,40 @@
 package com.wechat.util;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.security.KeyManagementException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 
+import com.alibaba.fastjson.JSONObject;
 import com.wechat.bean.ArticleItem;
+
 
 /**
  * 请求校验工具类
@@ -133,7 +150,7 @@ public class WeChatUtil {
 		inputStream = null;
 		return map;
 	}
-
+	
 	public static String mapToXML(Map map) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("<xml>");
@@ -175,6 +192,74 @@ public class WeChatUtil {
 
 		}
 	}
+	
+	/**
+     * 如果返回JSON数据包,转换为 JSONObject
+     * @param requestUrl
+     * @param requestMethod
+     * @param outputStr
+     * @param needCert
+     * @return
+     */
+    public static JSONObject httpsRequestToJsonObject(String requestUrl, String requestMethod, String outputStr,boolean needCert) {
+        JSONObject jsonObject = null;
+        try {
+             StringBuffer buffer = httpsRequest(requestUrl, requestMethod, outputStr,needCert);
+            jsonObject = JSONObject.parseObject(buffer.toString());
+        } catch (ConnectException ce) {
+            System.out.println("连接超时："+ce.getMessage());
+        } catch (Exception e) {
+        	System.out.println("https请求异常："+e.getMessage());
+        }
+
+        return jsonObject;
+    }
+    
+	/**
+    *
+    * @param requestUrl     接口地址
+    * @param requestMethod  请求方法：POST、GET...
+    * @param output         接口入参
+    * @param needCert       是否需要数字证书
+    * @return
+    */
+   @SuppressWarnings("unused")
+   static StringBuffer httpsRequest(String requestUrl, String requestMethod, String output,boolean needCert)
+           throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException, MalformedURLException,
+           IOException, ProtocolException, UnsupportedEncodingException {
+
+
+       URL url = new URL(requestUrl);
+       HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+
+       connection.setDoOutput(true);
+       connection.setDoInput(true);
+       connection.setUseCaches(false);
+       connection.setRequestMethod(requestMethod);
+       if (null != output) {
+           OutputStream outputStream = connection.getOutputStream();
+           outputStream.write(output.getBytes("UTF-8"));
+           outputStream.close();
+       }
+
+       // 从输入流读取返回内容
+       InputStream inputStream = connection.getInputStream();
+       InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "utf-8");
+       BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+       String str = null;
+       StringBuffer buffer = new StringBuffer();
+       while ((str = bufferedReader.readLine()) != null) {
+           buffer.append(str);
+       }
+
+       bufferedReader.close();
+       inputStreamReader.close();
+       inputStream.close();
+       inputStream = null;
+       connection.disconnect();
+       return buffer;
+   }
+	
 	/**
 	 * 回复文本消息
 	 * @param requestMap
@@ -220,6 +305,125 @@ public class WeChatUtil {
         map.put("Articles", Articles);
         map.put("ArticleCount", Articles.size());
         return mapToXML(map);
+	}
+	
+	 /**
+	  * 签名生成
+	  * @param jsapi_ticket
+	  * @param url
+	  * @return
+	  */
+	public static Map<String, String> sign(String jsapi_ticket, String url) {
+        Map<String, String> ret = new HashMap<String, String>();
+        
+        Random ran = new Random();
+        String nonce_str = RandomStringUtils.randomAlphanumeric(ran.nextInt(10)+16);
+        
+        String timestamp = System.currentTimeMillis()+"";
+        String string1;
+        String signature = "";
+
+        string1 = "jsapi_ticket=" + jsapi_ticket +
+                  "&noncestr=" + nonce_str +
+                  "&timestamp=" + timestamp +
+                  "&url=" + url;
+        System.out.println("字典排序的字符串"+string1);
+
+        try
+        {
+            MessageDigest crypt = MessageDigest.getInstance("SHA-1");
+            crypt.reset();
+            crypt.update(string1.getBytes("UTF-8"));
+            signature = byteToHex(crypt.digest());
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            e.printStackTrace();
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            e.printStackTrace();
+        }
+
+        ret.put("url", url);
+        ret.put("jsapi_ticket", jsapi_ticket);
+        ret.put("noncestr", nonce_str);
+        ret.put("timestamp", timestamp);
+        ret.put("signature", signature);
+
+        return ret;
+    }
+    
+    public static Map<String, String> signLocation(String appId, String url, String accesstoken) {
+     Map<String, String> ret = new HashMap<String, String>();
+     
+     Random ran = new Random();
+     String nonce_str = RandomStringUtils.randomAlphanumeric(ran.nextInt(10)+16);
+     
+     String timestamp = System.currentTimeMillis()+"";
+     String string1;
+     String signature = "";
+     
+     string1 = "accesstoken="+accesstoken+"&appId=" + appId +
+       "&noncestr=" + nonce_str +
+       "&timestamp=" + timestamp +
+       "&url=" + url;
+     System.out.println(string1);
+     
+     try
+     {
+      MessageDigest crypt = MessageDigest.getInstance("SHA-1");
+      crypt.reset();
+      crypt.update(string1.getBytes("UTF-8"));
+      signature = byteToHex(crypt.digest());
+     }
+     catch (NoSuchAlgorithmException e)
+     {
+      e.printStackTrace();
+     }
+     catch (UnsupportedEncodingException e)
+     {
+      e.printStackTrace();
+     }
+     
+     ret.put("url", url);
+     ret.put("nonceStr", nonce_str);
+     ret.put("timestamp", timestamp);
+     ret.put("signature", signature);
+     
+     return ret;
+    }
+
+	private static String byteToHex(final byte[] hash) {
+		Formatter formatter = new Formatter();
+		for (byte b : hash) {
+			formatter.format("%02x", b);
+		}
+		String result = formatter.toString();
+		formatter.close();
+		return result;
+	}
+
+	/**
+	 * 获取用户的openId
+	 * 
+	 * @param code 微信返回的code
+	 */
+	public static String getOpenId(String code) {
+		String openId = null;
+		String oauth_url = MenuCreator2.GetOpenIdUrl.replace("APPID", WeChatContant.appID)
+				.replace("SECRET", WeChatContant.appsecret).replace("CODE", code);
+		System.out.println("oauth_url:" + oauth_url);
+		JSONObject jsonObject = httpsRequestToJsonObject(oauth_url, "GET", null, false);
+		System.out.println("jsonObject:" + jsonObject);
+		Object errorCode = jsonObject.get("errcode");
+		if (errorCode != null) {
+			System.out.println("code不合法");
+		} else {
+			openId = jsonObject.getString("openid");
+			System.out.println("openId:" + openId);
+		}
+		return openId;
 	}
 	
 }
