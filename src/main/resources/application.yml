@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 80
 spring:
   application:
     name: wechat
@@ -9,11 +9,13 @@ spring:
   datasource:    driver-class-name: com.mysql.jdbc.Driver
     url: jdbc:mysql://119.29.133.81:3306/wechat?useUnicode=true&characterEncoding=utf-8
     username: root
-    password: 123456
-  redis:    host: 127.0.0.1
+    password: zj123456@@@@
+  redis:    host: 119.29.133.81
     port: 6379
     database: 0
     timeout: 2000
+    password: zj123456@@@@
 mybatis:    config-location: classpath:mybatis/mybatis-config.xml
     mapper-locations: classpath:mybatis/mapper/*.xml
     type-aliases-package: com.wechat.bean
+logging:  config: classpath:log4j2.yml

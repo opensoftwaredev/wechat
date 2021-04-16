@@ -6,14 +6,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-
-import javax.net.ssl.HttpsURLConnection;
 
 public class CommonUtil {
 	
@@ -26,18 +25,20 @@ public class CommonUtil {
     * @return
     */
    @SuppressWarnings("unused")
-private static StringBuffer httpsRequest(String requestUrl, String requestMethod, String output,boolean needCert)
+public static StringBuffer httpRequest(String requestUrl, String requestMethod, String output,boolean needCert)
            throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException, MalformedURLException,
            IOException, ProtocolException, UnsupportedEncodingException {
 
 
        URL url = new URL(requestUrl);
-       HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
+       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
        connection.setDoOutput(true);
        connection.setDoInput(true);
-       connection.setUseCaches(false);
+       connection.setUseCaches(false);                                                                                
        connection.setRequestMethod(requestMethod);
+       connection.setRequestProperty("Content-Type", 
+               "application/json");
        if (null != output) {
            OutputStream outputStream = connection.getOutputStream();
            outputStream.write(output.getBytes("UTF-8"));

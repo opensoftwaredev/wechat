@@ -32,8 +32,8 @@ public interface FeignUtil {
 	 * @param token
 	 * @return
 	 */
-	@RequestMapping(value="/cgi-bin/message/template/send?access_token={token}",method = RequestMethod.POST)
-	public JSONObject setTemplateMsg(@PathVariable("token") String token);
+	@RequestMapping(value="/cgi-bin/message/template/send?access_token={token}",method = RequestMethod.POST, consumes="application/json")
+	public JSONObject setTemplateMsg(@PathVariable("token") String token, JSONObject postBody);
 	
 	/**
 	* 获取Sign用于调用微信JSAPI

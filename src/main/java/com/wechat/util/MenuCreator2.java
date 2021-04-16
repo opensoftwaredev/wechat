@@ -1,20 +1,23 @@
 package com.wechat.util;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
 import com.alibaba.fastjson.JSONObject;
 import com.wechat.bean.Button;
 import com.wechat.bean.Menu;
+import com.wechat.log.LogUtils;
 
 public class MenuCreator2 {
 	
@@ -30,7 +33,14 @@ public class MenuCreator2 {
 	
 	public static final String appsecret = "1e6c95e1d4480cba4295659d0330956d";
 	
-	public static final String hostName = "http://381x02050w.qicp.vip";
+//	public static final String hostName = "http://www.hongyumakertechnology.com";
+	public static final String hostName = "http://www.hongyumakertechnology.com";
+	
+	enum STATUS {
+		OFFLINE,
+		ONLINE,
+		REPORT_PROPERTY
+	}
 	
 	public static JSONObject createMenu(){
 		JSONObject tokenMap = WeChatUtil.httpsRequestToJsonObject(TokenUrl.replace("{appid}", appid).replace("{secret}", appsecret), "GET" ,null, false);
@@ -124,8 +134,8 @@ public class MenuCreator2 {
 		System.out.println(json);
 		return json.toString();
 	}
-	public static void main(String[] args) throws UnsupportedEncodingException {
-		getJsonParam();
+	public static void main(String[] args) throws KeyManagementException, NoSuchAlgorithmException, NoSuchProviderException, MalformedURLException, ProtocolException, IOException {
+//		getJsonParam();
 //		JSONObject message = createMenu();
 //		System.out.println("result:"+message);
 //		if(message.toString().indexOf("\"errcode\":0")>-1){
@@ -133,6 +143,24 @@ public class MenuCreator2 {
 //		}else{
 //			System.out.println("ç”Ÿæˆ�å¤±è´¥ï¼�");
 //		}
+		
+		while(true) {
+					try {
+						// 间隔10秒发送心跳
+						Thread.sleep(1000);
+						System.out.println("还活着");
+					} catch (Exception e) {
+						// 捕获异常进行重连
+						System.out.println("再次发送成功");
+					}
+				}
+		
+		
+
+		//System.out.println(STATUS.OFFLINE.toString().equals("OFFLINE"));
+		
+        //String url = MenuCreator2.hostName + "/sendWXNotification?deviceId=12";
+        //StringBuffer result = CommonUtil.httpRequest(url, "POST" ,"{\"id\":1,\"age\":2,\"name\":\"zhang\"}", false);
 		//sendTemplateMsg();
 		
 		
@@ -145,13 +173,15 @@ public class MenuCreator2 {
 		}*/
 	}
 	
-	public static void sendTemplateMsg() {
+	public static boolean sendTemplateMsg(String openId) {
+		
 		JSONObject tokenMap = WeChatUtil.httpsRequestToJsonObject(TokenUrl.replace("{appid}", appid).replace("{secret}", appsecret), "GET" ,null, false);
 		String token = (String) tokenMap.get("access_token");
+		
         
         String postUrl = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=" + token;
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("touser", "o7MFJ5pug06YahrtPVA_nC-O1WmE");   // openid
+        jsonObject.put("touser", openId);   // openid
         jsonObject.put("template_id", "im8AlmFF6Huf5117PJdxo7ojmOIEQfhLGlz8m7VWLz0");
         jsonObject.put("url", "http://www.baidu.com");
  
@@ -185,9 +215,13 @@ public class MenuCreator2 {
         if(errcode == 0){
             // 发送成功
             System.out.println("发送成功");
+            LogUtils.getBussinessLogger().info("发送模板消息成功");
+            return true;
         } else {
             // 发送失败
             System.out.println("发送失败");
+            LogUtils.getBussinessLogger().info("发送模板消息失败");
+            return false;
         }
 	}
 }

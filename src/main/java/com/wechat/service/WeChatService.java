@@ -4,6 +4,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.alibaba.fastjson.JSONObject;
+
 public interface WeChatService {
 	/**
 	 * 核心处理方法
@@ -31,4 +33,12 @@ public interface WeChatService {
 	 * @return
 	 */
 	public Map<String,String> getSign(String url);
+	
+	/**
+	 * 发送模板消息
+	 * @return
+	 */
+	public boolean sendTemplateMsg(String openId, String deviceName, JSONObject key);
+	
+	public boolean sendTemplateMsg1(String openId);
 }

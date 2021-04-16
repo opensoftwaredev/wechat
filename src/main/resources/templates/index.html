@@ -11,28 +11,80 @@
         	padding: 0;
         }
         .content {
-		    position: absolute;
-		    top: 50%;
-		    left: 50%;
-		    transform: translate(-50%, -50%);
+		    position: relative;
+		    text-align: center;
+		    height: 100px;
+		    margin-top: 50px;
         }
         #scan-btn {
         	    width: 150px;
 			    height: 50px;
-			    background: green;
-			    border: 4px solid purple;
+			    background: #474747;
 			    border-radius: 20px;
+			    color: white;
         }
+        .title {
+        	text-align:center;
+        	height: 40px;
+        	line-height: 40px;
+        	font-size: 20px;
+        	font-weight: 500;
+        }
+        .tb-header {
+        	height: 40px;
+        	line-height: 40px;
+        	display: flex;
+        	background-color: gray;
+        }
+        .col {
+        	display: inline-block;
+        	text-align: center;
+        }
+        .column60 {
+        	width: 60%;
+        }
+        .column40 {
+        	width: 40%;
+        }
+        .sigle-device {
+        	display: block;
+        	text-align: center;
+        	height: 40px;
+        	line-height: 40px;
+        }
+        .color-btn {
+        	width: 80px;
+        	height: 30px;
+    		letter-spacing: 8px;
+    		padding-left: 12px;
+    		border-radius: 5px;
+    		background: -webkit-linear-gradient(top, #66B5E6, #2e88c0);
+    		border: 1px solid #2576A8;
+    		box-shadow: 0 1px 2px #B8DCF1 inset, 0 -1px 0 #316F96 inset;
+    		color: #fff;
+    		text-shadow: 1px 1px 0.5px #22629B;
+        }
+        
 
     </style>
 </head>
 <body>
 	<div class="content">
-		<button id="scan-btn">点我调用扫一扫</button>
+		<button id="scan-btn">+扫一扫添加设备</button>
+	</div>
+	<div id="device-list">
+		<div class="title">设备列表</div>
+		<div  class="tb-header">
+			<span class="col column60">设备别称</span>
+			<span class="col column40">动作</span>
+		</div>
 	</div>
 </body>
 <script src='http://res2.wx.qq.com/open/js/jweixin-1.6.0.js'></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script>
+//load deviceList on the firsttime
+	var hostName = 'http://www.hongyumakertechnology.com';
 	//获取code值
 	function getQueryVariable(variable)
 	{
@@ -44,9 +96,21 @@
 	       }
 	       return(false);
 	}
+    function deleteDevice(deviceId, iid) {
+    	$.get("/deleteDevice?openId=" + data.openId + "&deviceId=" + deviceId, function(result, status){
+    		if ('success' == status) {
+    			$('#'+iid).hide();
+    			alert('设备解绑成功');
+    		}else{
+    			alert('设备解绑失败');
+    		}
+    	});
+    }
 	var code=getQueryVariable('code');
+	//var url='http://firezj.yixianshenji.com/page/index/?code='+code+'&state=1';
+	var url = location.href.split('#')[0];
     var div=document.querySelector('#scan-btn');
-    var url=window.location.href;
+    div.disabled = true;
     var data;//接受配置信息，后台给的
     var getWxConfig=function(){
         var xhr=null;
@@ -55,25 +119,33 @@
         } else if(window.ActiveXObject){
             xhr=new ActiveXObject("Microsoft.XMLHTTP");
         }
-        xhr.open('post','http://381x02050w.qicp.vip/bindDevice');
+        xhr.open('post',hostName+'/wxConfig?code='+code);
         xhr.setRequestHeader("Content-type","application/json");
-        var postData={
-        		'openId': '123',
-        		'deviceId': '124'
+        var postData1={
+        		'url': url
         }
         xhr.onreadystatechange=function(){
             if(xhr.readyState==4&&xhr.status==200){
                 data=(xhr.responseText);
                 data=JSON.parse(data);
+                div.disabled = false;
+                //data.openId = 'o7MFJ5pug06YahrtPVA_nC-O1WmE';
+                $.get("/getDeviceList?openId="+data.openId,function(result,status){
+                	for (var i=0; i<result.length; i++) {
+                		var temp = JSON.parse(JSON.stringify(result[i]));
+                		$("#device-list").append("<div id='"+temp.id+"' class='sigle-device'><span class='col column60'>"+temp.deviceName+"</span><span class='col column40'><button class='color-btn' onclick='deleteDevice(\""+temp.deviceId+"\", "+temp.id+")'>解绑</button></span></div>");	
+                	}
+                }, "json");
             }
         };
-        xhr.send(JSON.stringify(postData));
+        xhr.send(JSON.stringify(postData1));
     }
     getWxConfig();
+    
     div.onclick=function(){
         wx.config({
-            debug : true, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
-            appId : 'wx27f5467670b82518', // 必填，公众号的唯一标识
+            debug : false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+            appId : 'wx50e494948f4a9074', // 必填，公众号的唯一标识
             timestamp : data.timestamp, // 必填，生成签名的时间戳
             nonceStr : data.noncestr, // 必填，生成签名的随机串
             signature : data.signature,// 必填，签名，见附录1
@@ -85,24 +157,28 @@
                 scanType: ["qrCode","barCode"], // 可以指定扫二维码还是一维码，默认二者都有
                 success: function (res) {
                 	var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
-                    console.log(res);
-                    alert(res);
+					result = JSON.parse(result.trim());
                     var xhr=null;
                     if(window.XMLHttpRequest){
                         xhr=new XMLHttpRequest();
                     } else if(window.ActiveXObject){
                         xhr=new ActiveXObject("Microsoft.XMLHTTP");
                     }
-                    xhr.open('post','http://381x02050w.qicp.vip/bindDevice');
+                    xhr.open('post',hostName+'/bindDevice');
                     xhr.setRequestHeader("Content-type","application/json");
                     var postData={
                     		'openId': data.openId,
-                    		'deviceId': result
+                    		'deviceId': result.id,
+                    		'deviceName': result.name
                     }
                     xhr.onreadystatechange=function(){
-                        if(xhr.readyState==4&&xhr.status==200){
-                            data=(xhr.responseText);
-                            data=JSON.parse(data);
+                        if(xhr.readyState==4){
+                        	if (xhr.status==200) {
+                            	returnId=(xhr.responseText);
+                            	$("#device-list").append("<div id='"+returnId+"' class='sigle-device'><span class='col column60'>"+postData.deviceName+"</span><span class='col column40'><button class='color-btn' onclick='deleteDevice(\""+postData.deviceId+"\", "+returnId+")'>解绑</button></span></div>");
+                        	} else {
+                        		alert('请检查您的设备是否已经绑定！！');
+                        	}
                         }
                     };
                     xhr.send(JSON.stringify(postData));
@@ -110,6 +186,6 @@
             });
         });
     }
-    
+
 </script>
 </html>

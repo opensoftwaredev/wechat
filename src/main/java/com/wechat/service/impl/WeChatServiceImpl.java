@@ -1,7 +1,9 @@
 package com.wechat.service.impl;
 
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -12,8 +14,10 @@ import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.wechat.bean.ArticleItem;
+import com.wechat.log.LogUtils;
 import com.wechat.service.WeChatService;
 import com.wechat.util.FeignUtil;
+import com.wechat.util.MenuCreator2;
 import com.wechat.util.RedisUtils;
 import com.wechat.util.WeChatContant;
 import com.wechat.util.WeChatUtil;
@@ -27,6 +31,7 @@ public class WeChatServiceImpl implements WeChatService{
 	private FeignUtil feignUtil;
 	@Autowired
 	private RedisUtils redisUtils;
+	
     public String processRequest(HttpServletRequest request) {
         // xml格式的消息数据
         String respXml = null;
@@ -203,5 +208,111 @@ public class WeChatServiceImpl implements WeChatService{
 		Map<String, String> jsonObj = WeChatUtil.sign(ticket, url);
 		return jsonObj;
 	}
+	
+	@Override
+	public boolean sendTemplateMsg(String openId, String deviceName, JSONObject body) {
+		
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("touser", openId);   // openid
+        jsonObject.put("template_id", "im8AlmFF6Huf5117PJdxo7ojmOIEQfhLGlz8m7VWLz0");
+        
+ 
+        JSONObject data = new JSONObject();
+        JSONObject first = new JSONObject();
+        first.put("value", "您绑定的设备状态有更新");
+        first.put("color", "#173177");
+        JSONObject keyword1 = new JSONObject();
+        keyword1.put("value",  deviceName);
+        keyword1.put("color", "#173177");
+        JSONObject keyword3 = new JSONObject();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
+        keyword3.put("value", df.format(new Date()));
+        keyword3.put("color", "#173177");
+        JSONObject remark = new JSONObject();
+        if ((body.getString("topic").indexOf("/offline") >=0)) {
+            remark.put("value", "火精灵盒子已停止运行了");
+        } else if ((body.getString("topic").indexOf("/online") >=0)) {
+        	remark.put("value", "火精灵盒子已正常运行，现在进入看护模式，小心火烛！");
+        } else if ((body.getString("topic").indexOf("/event") >=0)){
+        	jsonObject.put("url", MenuCreator2.hostName + "/getDetailInfo?key=" + body.getJSONObject("payload").getJSONObject("data").get("key").toString());
+        	remark.put("value", "警告! 火精灵盒子发现了火情");
+        }
+
+        remark.put("color", "#173177");
+        
+        data.put("first",first);
+        data.put("device",keyword1);
+        data.put("time",keyword3);
+        data.put("remark",remark);
+ 
+        jsonObject.put("data", data);
+        
+        JSONObject result = feignUtil.setTemplateMsg(getToken(), jsonObject);
+ 
+        int errcode = result.getIntValue("errcode");
+        if(errcode == 0){
+            // 发送成功
+            System.out.println("发送成功");
+            LogUtils.getBussinessLogger().info("发送模板消息成功");
+            return true;
+        } else {
+            // 发送失败
+            System.out.println("发送失败");
+            LogUtils.getBussinessLogger().info("发送模板消息失败");
+            return false;
+        }
+	}
+	
+	public boolean sendTemplateMsg1(String openId) {
+		
+		String token = getToken();
+		
+        
+        String postUrl = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=" + token;
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("touser", openId);   // openid
+        jsonObject.put("template_id", "im8AlmFF6Huf5117PJdxo7ojmOIEQfhLGlz8m7VWLz0");
+        jsonObject.put("url", "http://www.baidu.com");
+ 
+        JSONObject data = new JSONObject();
+        JSONObject first = new JSONObject();
+        first.put("value", "您绑定的设备已经着火");
+        first.put("color", "#173177");
+        JSONObject keyword1 = new JSONObject();
+        keyword1.put("value", "123！23123123");
+        keyword1.put("color", "#173177");
+        JSONObject keyword2 = new JSONObject();
+        keyword2.put("value", "hello");
+        keyword2.put("color", "#173177");
+        JSONObject keyword3 = new JSONObject();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
+        keyword3.put("value", df.format(new Date()));
+        keyword3.put("color", "#173177");
+        JSONObject remark = new JSONObject();
+        remark.put("value", "已经着火了，请注意查看");
+        remark.put("color", "#173177");
+        
+        data.put("first",first);
+        data.put("device",keyword1);
+        data.put("time",keyword3);
+        data.put("remark",remark);
+ 
+        jsonObject.put("data", data);
+ 
+		JSONObject result = WeChatUtil.httpsRequestToJsonObject(postUrl, "POST" ,jsonObject.toJSONString(), false);
+        int errcode = result.getIntValue("errcode");
+        if(errcode == 0){
+            // 发送成功
+            System.out.println("发送成功");
+            LogUtils.getBussinessLogger().info("发送模板消息成功");
+            return true;
+        } else {
+            // 发送失败
+            System.out.println("发送失败");
+            LogUtils.getBussinessLogger().info("发送模板消息失败");
+            return false;
+        }
+	}
+   
    
 }

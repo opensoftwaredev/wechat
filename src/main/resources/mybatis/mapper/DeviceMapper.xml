@@ -2,12 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.wechat.mapper.DeviceMapper" >
     <resultMap id="BaseResultMap" type="com.wechat.bean.DeviceEntity" >
-    	<id column="deviceId" property="deviceId" jdbcType="VARCHAR" />
+    	<id column="id" property="id" jdbcType="BIGINT" />
         <result column="openId" property="openId" jdbcType="VARCHAR" />
+        <result column="deviceId" property="deviceId" jdbcType="VARCHAR" />
     </resultMap>
     
     <sql id="Base_Column_List" >
-        openId, deviceId
+        id, openId, deviceId, deviceName
     </sql>
 
     <select id="getAll" resultMap="BaseResultMap"  >
@@ -16,26 +17,33 @@
 	   FROM t_device
     </select>
 
-    <select id="getOne" parameterType="java.lang.String" resultMap="BaseResultMap" >
+    <select id="getOneMoreOpenId" parameterType="java.lang.String" resultMap="BaseResultMap" >
         SELECT 
        <include refid="Base_Column_List" />
 	   FROM t_device
 	   WHERE deviceId = #{deviceId}
     </select>
+    
+    <select id="getOneMoreDeviceId" parameterType="java.lang.String" resultMap="BaseResultMap" >
+        SELECT 
+       <include refid="Base_Column_List" />
+	   FROM t_device
+	   WHERE openId = #{openId}
+    </select>
 
-    <insert id="insert" parameterType="com.wechat.bean.DeviceEntity" >
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" parameterType="com.wechat.bean.DeviceEntity" >
        INSERT INTO 
        		t_device
-       		(openId,deviceId) 
+       		(id,openId,deviceId,deviceName) 
        	VALUES
-       		(#{openId}, #{deviceId})
+       		(#{id}, #{openId}, #{deviceId}, #{deviceName})
     </insert>
     
     <delete id="delete" parameterType="java.lang.String" >
        DELETE FROM
        		 t_device 
        WHERE 
-       		 deviceId =#{deviceId}
+       		 deviceId =#{deviceId} and openId =#{openId}
     </delete>
 
 </mapper>

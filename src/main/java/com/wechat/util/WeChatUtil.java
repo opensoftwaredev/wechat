@@ -34,6 +34,7 @@ import org.dom4j.io.SAXReader;
 
 import com.alibaba.fastjson.JSONObject;
 import com.wechat.bean.ArticleItem;
+import com.wechat.log.LogUtils;
 
 
 /**
@@ -276,6 +277,24 @@ public class WeChatUtil {
         map.put("Content", content);
         return  mapToXML(map);
     }
+
+		/**
+		 * 回复文本消息
+		 * @param requestMap
+		 * @param content
+		 * @return
+		 */
+	 public static String sendEventTextMsg(String openId,String content){
+	    	
+	    	Map<String,Object> map=new HashMap<String, Object>();
+	        map.put("ToUserName", openId);
+	        map.put("FromUserName", "gh_0d97ba88f982");
+	        map.put("MsgType", WeChatContant.RESP_MESSAGE_TYPE_TEXT);
+	        map.put("CreateTime", new Date().getTime());
+	        map.put("Content", content);
+	        return  mapToXML(map);
+	    }
+	
 	 /**
 	  * 回复图文消息
 	  * @param requestMap
@@ -327,7 +346,7 @@ public class WeChatUtil {
                   "&noncestr=" + nonce_str +
                   "&timestamp=" + timestamp +
                   "&url=" + url;
-        System.out.println("字典排序的字符串"+string1);
+        LogUtils.getBussinessLogger().info("字典排序的字符串：", string1);
 
         try
         {
@@ -413,15 +432,14 @@ public class WeChatUtil {
 		String openId = null;
 		String oauth_url = MenuCreator2.GetOpenIdUrl.replace("APPID", WeChatContant.appID)
 				.replace("SECRET", WeChatContant.appsecret).replace("CODE", code);
-		System.out.println("oauth_url:" + oauth_url);
 		JSONObject jsonObject = httpsRequestToJsonObject(oauth_url, "GET", null, false);
-		System.out.println("jsonObject:" + jsonObject);
+		LogUtils.getBussinessLogger().info("调用获取openId的微信接口返回的对象为", jsonObject);
 		Object errorCode = jsonObject.get("errcode");
 		if (errorCode != null) {
-			System.out.println("code不合法");
+			LogUtils.getBussinessLogger().info("code不合法");
 		} else {
 			openId = jsonObject.getString("openid");
-			System.out.println("openId:" + openId);
+			LogUtils.getBussinessLogger().info("取得的openId为：", openId);
 		}
 		return openId;
 	}

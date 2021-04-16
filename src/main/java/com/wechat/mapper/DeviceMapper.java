@@ -2,16 +2,20 @@ package com.wechat.mapper;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Param;
+
 import com.wechat.bean.DeviceEntity;
 
 public interface DeviceMapper {
 	
 	List<DeviceEntity> getAll();
 	
-	DeviceEntity getOne(String deviceId);
+	List<DeviceEntity> getOneMoreOpenId(String deviceId);
+	
+	List<DeviceEntity> getOneMoreDeviceId(String openId);
 
-	void insert(DeviceEntity device);
+	int insert(DeviceEntity device);
 
-	void delete(String deviceId);
+	void delete(@Param("deviceId") String deviceId, @Param("openId") String openId);
 
 }
